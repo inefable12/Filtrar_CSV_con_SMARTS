@@ -7,6 +7,22 @@ st.set_page_config(page_title="Filtro SMARTS", layout="wide")
 
 st.title("🔬 Filtro de moléculas por SMARTS")
 
+# =========================================================
+# INICIALIZAR SESSION STATE
+# =========================================================
+
+if "df_matches" not in st.session_state:
+    st.session_state.df_matches = None
+
+if "df_filtered" not in st.session_state:
+    st.session_state.df_filtered = None
+
+if "indices_matches" not in st.session_state:
+    st.session_state.indices_matches = None
+
+if "total_molecules" not in st.session_state:
+    st.session_state.total_molecules = None
+
 # =========================
 # INGRESO SMARTS
 # =========================
@@ -91,9 +107,9 @@ if archivo is not None:
                 return True
         return False
 
-    # =========================
-    # EJECUTAR
-    # =========================
+    # =========================================================
+    # BOTÓN EJECUTAR
+    # =========================================================
 
     if st.button("🔎 Ejecutar búsqueda"):
 
@@ -101,64 +117,75 @@ if archivo is not None:
 
             df["match"] = df["SMILES"].apply(match_any_smarts)
 
-            df_matches = df[df["match"]].drop(columns=["match"])
-            df_filtered = df[~df["match"]].drop(columns=["match"])
+            st.session_state.df_matches = df[df["match"]].drop(columns=["match"])
+            st.session_state.df_filtered = df[~df["match"]].drop(columns=["match"])
+            st.session_state.indices_matches = df[df["match"]].index.tolist()
+            st.session_state.total_molecules = len(df)
 
-            indices_matches = df[df["match"]].index.tolist()
+# =========================================================
+# MOSTRAR RESULTADOS SI EXISTEN
+# =========================================================
 
-        # =========================
-        # RESULTADOS
-        # =========================
+if st.session_state.df_matches is not None:
 
-        st.subheader("📊 Resultados")
+    df_matches = st.session_state.df_matches
+    df_filtered = st.session_state.df_filtered
+    indices_matches = st.session_state.indices_matches
+    total_molecules = st.session_state.total_molecules
 
-        col1, col2, col3 = st.columns(3)
+    st.subheader("📊 Resultados")
 
-        col1.metric("Moléculas totales", len(df))
-        col2.metric("Coincidencias", len(df_matches))
-        col3.metric("Después del filtrado", len(df_filtered))
+    col1, col2, col3 = st.columns(3)
 
-        # =========================
-        # INDICES
-        # =========================
+    col1.metric("Moléculas totales", total_molecules)
+    col2.metric("Coincidencias", len(df_matches))
+    col3.metric("Después del filtrado", len(df_filtered))
 
-        st.subheader("📌 Índices coincidentes")
-        st.code(str(indices_matches), language="python")
+    # =========================================================
+    # ÍNDICES
+    # =========================================================
 
-        # =========================
-        # DESCARGAS
-        # =========================
+    st.subheader("📌 Índices coincidentes")
+    st.code(str(indices_matches), language="python")
 
-        def to_csv_bytes(dataframe):
-            buffer = BytesIO()
-            dataframe.to_csv(buffer, index=True, sep=separator_option)
-            return buffer.getvalue()
+    # =========================================================
+    # FUNCIONES DESCARGA
+    # =========================================================
 
-        def indices_to_csv(indices):
-            df_idx = pd.DataFrame({"index": indices})
-            buffer = BytesIO()
-            df_idx.to_csv(buffer, index=False, sep=separator_option)
-            return buffer.getvalue()
+    def to_csv_bytes(dataframe):
+        buffer = BytesIO()
+        dataframe.to_csv(buffer, index=True, sep=separator_option)
+        return buffer.getvalue()
 
-        st.subheader("⬇️ Descargar")
+    def indices_to_csv(indices):
+        df_idx = pd.DataFrame({"index": indices})
+        buffer = BytesIO()
+        df_idx.to_csv(buffer, index=False, sep=separator_option)
+        return buffer.getvalue()
 
-        st.download_button(
-            "(a) Descargar SOLO coincidencias",
-            data=to_csv_bytes(df_matches),
-            file_name="coincidencias_smarts.csv",
-            mime="text/csv"
-        )
+    # =========================================================
+    # BOTONES DESCARGA
+    # =========================================================
 
-        st.download_button(
-            "(b) Descargar base SIN coincidencias",
-            data=to_csv_bytes(df_filtered),
-            file_name="base_filtrada.csv",
-            mime="text/csv"
-        )
+    st.subheader("⬇️ Descargar resultados")
 
-        st.download_button(
-            "Descargar índices coincidentes",
-            data=indices_to_csv(indices_matches),
-            file_name="indices_coincidentes.csv",
-            mime="text/csv"
-        )
+    st.download_button(
+        label="(a) Descargar SOLO moléculas que coinciden",
+        data=to_csv_bytes(df_matches),
+        file_name="coincidencias_smarts.csv",
+        mime="text/csv"
+    )
+
+    st.download_button(
+        label="(b) Descargar base SIN coincidencias",
+        data=to_csv_bytes(df_filtered),
+        file_name="base_filtrada.csv",
+        mime="text/csv"
+    )
+
+    st.download_button(
+        label="Descargar índices coincidentes",
+        data=indices_to_csv(indices_matches),
+        file_name="indices_coincidentes.csv",
+        mime="text/csv"
+    )
