@@ -3,7 +3,7 @@ import pandas as pd
 from rdkit import Chem
 from io import BytesIO
 
-st.set_page_config(page_title="Filtro SMARTS", layout="wide")
+st.set_page_config(page_title="Filtro SMARTS") #, layout="wide")
 
 st.title("🔬 Filtro de moléculas por SMARTS")
 
