@@ -36,7 +36,7 @@ user_smarts = st.text_input(
 # SELECCIONAR DELIMITADOR
 # =========================
 
-st.sidebar.image("img/scilogo-design.png", caption="Jesus Alvarado-Huayhuaz")
+st.sidebar.image("img/smarts4csv_logo.png", caption="Jesus Alvarado-Huayhuaz")
 st.sidebar.header("Configuración del archivo")
 
 separator_option = st.sidebar.radio(
